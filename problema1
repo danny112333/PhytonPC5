@@ -1,0 +1,75 @@
+import pandas as pd
+
+# Cargar los datos
+df_airbnb = pd.read_csv("./data/airbnb.csv")
+
+# Explorar los datos
+print(df_airbnb.shape)
+print(df_airbnb.columns)
+print(df_airbnb.info())
+print(df_airbnb.describe())
+
+# Visualizar las primeras filas
+df_airbnb.head()
+
+#FILTRADO DE DATOS
+# Filtrar las propiedades que tienen más de 10 críticas y puntuación mayor a 4
+alicia_df = df_airbnb[(df_airbnb['reviews'] > 10) & (df_airbnb['overall_satisfaction'] > 4)]
+
+# Filtrar las propiedades con al menos 2 habitaciones
+alicia_df = alicia_df[alicia_df['bedrooms'] >= 2]
+
+# Ordenar por puntuación (de mayor a menor) y luego por número de críticas (de mayor a menor)
+alicia_df = alicia_df.sort_values(by=['overall_satisfaction', 'reviews'], ascending=[False, False])
+
+# Seleccionar las 3 mejores opciones
+alicia_top3 = alicia_df.head(3)
+
+print(alicia_top3)
+#Caso 2: Comparación de críticas entre Roberto y Clara
+# Filtrar las propiedades de Roberto y Clara usando sus IDs
+roberto_clara_df = df_airbnb[df_airbnb['room_id'].isin([97503, 90387])]
+
+# Guardar el dataframe en un archivo Excel
+roberto_clara_df.to_excel("roberto.xls", index=False)
+
+print(roberto_clara_df)
+#Caso 3: Búsqueda de alojamiento para Diana
+# Filtrar las propiedades con un precio menor o igual a 50€
+diana_df = df_airbnb[df_airbnb['price'] <= 50]
+
+# Dar preferencia a las habitaciones compartidas y ordenar por precio y puntuación
+diana_df = diana_df.sort_values(by=['room_type', 'price', 'overall_satisfaction'], ascending=[True, True, False])
+
+# Seleccionar las 10 propiedades más baratas
+diana_top10 = diana_df.head(10)
+
+print(diana_top10)
+#Agrupamiento de Datos
+#Agrupamiento 1: Precio promedio por tipo de habitación
+# Agrupar por tipo de habitación y calcular el precio promedio
+grouped_room_type = df_airbnb.groupby('room_type').agg({'price': 'mean'}).reset_index()
+
+print(grouped_room_type)
+
+# Graficar el resultado
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+sns.barplot(x='room_type', y='price', data=grouped_room_type)
+plt.title('Precio Promedio por Tipo de Habitación')
+plt.show()
+
+#Agrupamiento 2: Número de críticas por barrio
+# Agrupar por barrio y calcular la suma de las críticas
+grouped_neighborhood = df_airbnb.groupby('neighborhood').agg({'reviews': 'sum'}).reset_index()
+
+print(grouped_neighborhood)
+
+# Graficar el resultado
+sns.barplot(x='neighborhood', y='reviews', data=grouped_neighborhood)
+plt.title('Número de Críticas por Barrio')
+plt.xticks(rotation=90)
+plt.show()
+
+
