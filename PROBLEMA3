@@ -1,0 +1,87 @@
+#DESCARGAR EL ARCHIVO
+
+import requests
+import zipfile
+import os
+
+# URL del archivo a descargar
+url = "https://netsg.cs.sfu.ca/youtubedata/0333.zip"
+
+# Descargar el archivo
+zip_path = "youtube_data.zip"
+with requests.get(url, stream=True) as r:
+    with open(zip_path, 'wb') as f:
+        f.write(r.content)
+
+# Descomprimir el archivo en una carpeta llamada 'youtube_data'
+with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+    zip_ref.extractall("youtube_data")
+
+# Borrar el archivo .zip después de descomprimir
+os.remove(zip_path)
+#Leer los Datos y Asignar Nombres a las Columnas
+import pandas as pd
+
+# Listar los archivos en la carpeta descomprimida
+data_files = os.listdir("youtube_data")
+
+# Leer uno de los archivos CSV
+file_path = os.path.join("youtube_data", data_files[0])
+df = pd.read_csv(file_path, sep="\t", header=None)
+
+# Asignar nombres a las columnas
+df.columns = [
+    "video_id", "uploader", "age", "category", "length", 
+    "views", "rate", "ratings", "comments", "related_ids"
+]
+
+# Mostrar las primeras filas para verificar
+print(df.head())
+
+#Filtrado Básico de Datos
+# Filtrar las columnas que nos interesan
+df_filtered = df[['video_id', 'age', 'category', 'views', 'rate']]
+
+# Filtrar por una categoría específica (por ejemplo, 'Music')
+df_filtered_music = df_filtered[df_filtered['category'] == 'Music']
+
+# Mostrar el resultado
+print(df_filtered_music.head())
+
+#Procesamiento en MongoDB
+pip install pymongo
+import pymongo
+
+# Conectar a MongoDB
+client = pymongo.MongoClient("mongodb://localhost:27017/")
+db = client["youtube_db"]
+collection = db["videos"]
+
+# Insertar los datos en MongoDB
+collection.insert_many(df_filtered_music.to_dict('records'))
+
+# Verificar cuántos documentos se han insertado
+print(collection.count_documents({}))
+
+# Crear Gráficos con los Datos
+pip install matplotlib seaborn
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Gráfico 1: Distribución de las visualizaciones
+plt.figure(figsize=(10, 6))
+sns.histplot(df_filtered_music['views'], bins=50, kde=True)
+plt.title('Distribución de Visualizaciones en la Categoría Music')
+plt.xlabel('Visualizaciones')
+plt.ylabel('Frecuencia')
+plt.show()
+
+# Gráfico 2: Calificación promedio por categoría
+plt.figure(figsize=(10, 6))
+sns.boxplot(x='category', y='rate', data=df_filtered_music)
+plt.title('Calificación Promedio por Categoría (Music)')
+plt.xlabel('Categoría')
+plt.ylabel('Calificación')
+plt.show()
+
